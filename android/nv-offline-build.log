@@ -1,0 +1,308 @@
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if "Windows_NT" == "Windows_NT" setlocal
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set DIRNAME=D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\ 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if "D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\" == "" set DIRNAME=. 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set APP_BASE_NAME=gradlew 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set APP_HOME=D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\ 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>for %i in ("D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\") do set APP_HOME=%~fi 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set APP_HOME=D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\ 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m" 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if defined JAVA_HOME goto findJavaFromJavaHome 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set JAVA_EXE=C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot/bin/java.exe 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if exist "C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot/bin/java.exe" goto execute 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>"C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot/bin/java.exe" "-Xmx64m" "-Xms64m"  -Djavax.net.ssl.trustStoreType=WINDOWS-ROOT "-Dorg.gradle.appname=gradlew" -jar "D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\\gradle\wrapper\gradle-wrapper.jar" assembleDebug --offline --console=plain --no-daemon --max-workers=2 
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:processResources NO-SOURCE
+> Task :gradle-plugin:settings-plugin:pluginDescriptors
+> Task :gradle-plugin:settings-plugin:processResources
+> Task :gradle-plugin:shared:compileKotlin
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar
+> Task :gradle-plugin:settings-plugin:compileKotlin
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:classes
+> Task :gradle-plugin:settings-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors
+> Task :gradle-plugin:react-native-gradle-plugin:processResources
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:classes
+> Task :gradle-plugin:react-native-gradle-plugin:jar
+
+> Configure project :react-native-video
+Kotlin version is correct: 2.1.20
+AndroidX version is correct: 1.9.3
+useExoplayerIMA: false
+useExoplayerSmoothStreaming: true
+useExoplayerDash: true
+useExoplayerHls: true
+useExoplayerRtsp: false
+buildFromSource: false
+
+> Task :app:generateAutolinkingNewArchitectureFiles UP-TO-DATE
+> Task :app:generateAutolinkingPackageList UP-TO-DATE
+> Task :app:generateCodegenSchemaFromJavaScript SKIPPED
+> Task :app:generateCodegenArtifactsFromSchema SKIPPED
+> Task :app:generateReactNativeEntryPoint UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-async-storage_async-storage:preBuild UP-TO-DATE
+> Task :react-native-fs:preBuild UP-TO-DATE
+> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-safe-area-context:preBuild UP-TO-DATE
+> Task :react-native-video:preBuild UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :react-native-async-storage_async-storage:preDebugBuild UP-TO-DATE
+> Task :react-native-async-storage_async-storage:writeDebugAarMetadata UP-TO-DATE
+> Task :react-native-fs:preDebugBuild UP-TO-DATE
+> Task :react-native-fs:writeDebugAarMetadata UP-TO-DATE
+> Task :react-native-safe-area-context:preDebugBuild UP-TO-DATE
+> Task :react-native-safe-area-context:writeDebugAarMetadata UP-TO-DATE
+> Task :react-native-video:preDebugBuild UP-TO-DATE
+> Task :react-native-video:writeDebugAarMetadata UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateDebugResValues UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateDebugResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:packageDebugResources UP-TO-DATE
+> Task :react-native-fs:generateDebugResValues UP-TO-DATE
+> Task :react-native-fs:generateDebugResources UP-TO-DATE
+> Task :react-native-fs:packageDebugResources UP-TO-DATE
+> Task :react-native-safe-area-context:generateDebugResValues UP-TO-DATE
+> Task :react-native-safe-area-context:generateDebugResources UP-TO-DATE
+> Task :react-native-safe-area-context:packageDebugResources UP-TO-DATE
+> Task :react-native-video:generateDebugResValues UP-TO-DATE
+> Task :react-native-video:generateDebugResources UP-TO-DATE
+> Task :react-native-video:packageDebugResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :react-native-async-storage_async-storage:extractDeepLinksDebug UP-TO-DATE
+> Task :react-native-async-storage_async-storage:processDebugManifest UP-TO-DATE
+> Task :react-native-fs:extractDeepLinksDebug UP-TO-DATE
+> Task :react-native-fs:processDebugManifest UP-TO-DATE
+> Task :react-native-safe-area-context:extractDeepLinksDebug UP-TO-DATE
+> Task :react-native-safe-area-context:processDebugManifest UP-TO-DATE
+> Task :react-native-video:extractDeepLinksDebug UP-TO-DATE
+> Task :react-native-video:processDebugManifest UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :react-native-async-storage_async-storage:compileDebugLibraryResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:parseDebugLocalResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateDebugRFile UP-TO-DATE
+> Task :react-native-fs:compileDebugLibraryResources UP-TO-DATE
+> Task :react-native-fs:parseDebugLocalResources UP-TO-DATE
+> Task :react-native-fs:generateDebugRFile UP-TO-DATE
+> Task :react-native-safe-area-context:compileDebugLibraryResources UP-TO-DATE
+> Task :react-native-safe-area-context:parseDebugLocalResources UP-TO-DATE
+> Task :react-native-safe-area-context:generateDebugRFile UP-TO-DATE
+> Task :react-native-video:compileDebugLibraryResources UP-TO-DATE
+> Task :react-native-video:parseDebugLocalResources UP-TO-DATE
+> Task :react-native-video:generateDebugRFile UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateDebugBuildConfig UP-TO-DATE
+> Task :react-native-async-storage_async-storage:javaPreCompileDebug UP-TO-DATE
+> Task :react-native-async-storage_async-storage:compileDebugJavaWithJavac UP-TO-DATE
+> Task :react-native-async-storage_async-storage:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :react-native-fs:generateDebugBuildConfig UP-TO-DATE
+> Task :react-native-fs:javaPreCompileDebug UP-TO-DATE
+> Task :react-native-fs:compileDebugJavaWithJavac UP-TO-DATE
+> Task :react-native-fs:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :react-native-safe-area-context:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-safe-area-context:generateDebugBuildConfig UP-TO-DATE
+> Task :react-native-safe-area-context:compileDebugKotlin UP-TO-DATE
+> Task :react-native-safe-area-context:javaPreCompileDebug UP-TO-DATE
+> Task :react-native-safe-area-context:compileDebugJavaWithJavac UP-TO-DATE
+> Task :react-native-safe-area-context:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :react-native-video:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-video:generateDebugBuildConfig UP-TO-DATE
+> Task :react-native-video:compileDebugKotlin UP-TO-DATE
+> Task :react-native-video:javaPreCompileDebug UP-TO-DATE
+> Task :react-native-video:compileDebugJavaWithJavac UP-TO-DATE
+> Task :react-native-video:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+
+> Task :app:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mergeDebugShaders UP-TO-DATE
+> Task :react-native-async-storage_async-storage:compileDebugShaders NO-SOURCE
+> Task :react-native-async-storage_async-storage:generateDebugAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mergeDebugAssets UP-TO-DATE
+> Task :react-native-fs:mergeDebugShaders UP-TO-DATE
+> Task :react-native-fs:compileDebugShaders NO-SOURCE
+> Task :react-native-fs:generateDebugAssets UP-TO-DATE
+> Task :react-native-fs:mergeDebugAssets UP-TO-DATE
+> Task :react-native-safe-area-context:mergeDebugShaders UP-TO-DATE
+> Task :react-native-safe-area-context:compileDebugShaders NO-SOURCE
+> Task :react-native-safe-area-context:generateDebugAssets UP-TO-DATE
+> Task :react-native-safe-area-context:mergeDebugAssets UP-TO-DATE
+> Task :react-native-video:mergeDebugShaders UP-TO-DATE
+> Task :react-native-video:compileDebugShaders NO-SOURCE
+> Task :react-native-video:generateDebugAssets UP-TO-DATE
+> Task :react-native-video:mergeDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :react-native-safe-area-context:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :react-native-video:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :react-native-async-storage_async-storage:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :react-native-fs:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:dexBuilderDebug
+> Task :app:processDebugJavaRes
+> Task :react-native-async-storage_async-storage:processDebugJavaRes NO-SOURCE
+> Task :react-native-fs:processDebugJavaRes NO-SOURCE
+> Task :react-native-safe-area-context:processDebugJavaRes UP-TO-DATE
+> Task :react-native-video:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugGlobalSynthetics
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :react-native-safe-area-context:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :react-native-video:bundleLibRuntimeToDirDebug
+> Task :app:mergeDebugJavaResource
+> Task :react-native-async-storage_async-storage:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :react-native-fs:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :app:mergeProjectDexDebug
+
+> Task :app:configureCMakeDebug[arm64-v8a]
+[CXX5304] This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+[CXX5304] This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+
+> Task :app:mergeLibDexDebug
+> Task :app:buildCMakeDebug[arm64-v8a]
+C/C++: Hard link from 'C:\Users\Sandman\.gradle\caches\9.0.0\transforms\ac68220bfb3eee8df2d731557e02f93a\transformed\react-android-0.86.0-debug\prefab\modules\reactnative\libs\android.arm64-v8a\libreactnative.so' to 'D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\app\build\intermediates\cxx\Debug\38706q18\obj\arm64-v8a\libreactnative.so' failed. Doing a slower copy instead.
+C/C++: Hard link from 'C:\Users\Sandman\.gradle\caches\9.0.0\transforms\ac68220bfb3eee8df2d731557e02f93a\transformed\react-android-0.86.0-debug\prefab\modules\reactnative\libs\android.arm64-v8a\libreactnative.so' to 'D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\app\build\intermediates\cxx\Debug\38706q18\obj\arm64-v8a\libreactnative.so' failed. Doing a slower copy instead.
+
+> Task :app:configureCMakeDebug[armeabi-v7a]
+> Task :app:buildCMakeDebug[armeabi-v7a]
+C/C++: Hard link from 'C:\Users\Sandman\.gradle\caches\9.0.0\transforms\ac68220bfb3eee8df2d731557e02f93a\transformed\react-android-0.86.0-debug\prefab\modules\reactnative\libs\android.armeabi-v7a\libreactnative.so' to 'D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\app\build\intermediates\cxx\Debug\38706q18\obj\armeabi-v7a\libreactnative.so' failed. Doing a slower copy instead.
+C/C++: Hard link from 'C:\Users\Sandman\.gradle\caches\9.0.0\transforms\ac68220bfb3eee8df2d731557e02f93a\transformed\react-android-0.86.0-debug\prefab\modules\reactnative\libs\android.armeabi-v7a\libreactnative.so' to 'D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\app\build\intermediates\cxx\Debug\38706q18\obj\armeabi-v7a\libreactnative.so' failed. Doing a slower copy instead.
+
+> Task :app:configureCMakeDebug[x86]
+> Task :app:buildCMakeDebug[x86]
+C/C++: Hard link from 'C:\Users\Sandman\.gradle\caches\9.0.0\transforms\ac68220bfb3eee8df2d731557e02f93a\transformed\react-android-0.86.0-debug\prefab\modules\reactnative\libs\android.x86\libreactnative.so' to 'D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\app\build\intermediates\cxx\Debug\38706q18\obj\x86\libreactnative.so' failed. Doing a slower copy instead.
+C/C++: Hard link from 'C:\Users\Sandman\.gradle\caches\9.0.0\transforms\ac68220bfb3eee8df2d731557e02f93a\transformed\react-android-0.86.0-debug\prefab\modules\reactnative\libs\android.x86\libreactnative.so' to 'D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\app\build\intermediates\cxx\Debug\38706q18\obj\x86\libreactnative.so' failed. Doing a slower copy instead.
+
+> Task :app:configureCMakeDebug[x86_64]
+> Task :app:buildCMakeDebug[x86_64]
+C/C++: Hard link from 'C:\Users\Sandman\.gradle\caches\9.0.0\transforms\ac68220bfb3eee8df2d731557e02f93a\transformed\react-android-0.86.0-debug\prefab\modules\reactnative\libs\android.x86_64\libreactnative.so' to 'D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\app\build\intermediates\cxx\Debug\38706q18\obj\x86_64\libreactnative.so' failed. Doing a slower copy instead.
+C/C++: Hard link from 'C:\Users\Sandman\.gradle\caches\9.0.0\transforms\ac68220bfb3eee8df2d731557e02f93a\transformed\react-android-0.86.0-debug\prefab\modules\reactnative\libs\android.x86_64\libreactnative.so' to 'D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\app\build\intermediates\cxx\Debug\38706q18\obj\x86_64\libreactnative.so' failed. Doing a slower copy instead.
+
+> Task :app:mergeDebugJniLibFolders
+> Task :react-native-async-storage_async-storage:mergeDebugJniLibFolders
+> Task :react-native-async-storage_async-storage:mergeDebugNativeLibs NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyDebugJniLibsProjectOnly
+> Task :react-native-fs:mergeDebugJniLibFolders
+> Task :react-native-fs:mergeDebugNativeLibs NO-SOURCE
+> Task :react-native-fs:copyDebugJniLibsProjectOnly
+> Task :react-native-safe-area-context:mergeDebugJniLibFolders
+> Task :react-native-safe-area-context:mergeDebugNativeLibs NO-SOURCE
+> Task :react-native-safe-area-context:copyDebugJniLibsProjectOnly
+> Task :react-native-video:mergeDebugJniLibFolders
+> Task :react-native-video:mergeDebugNativeLibs NO-SOURCE
+> Task :react-native-video:copyDebugJniLibsProjectOnly
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :react-native-async-storage_async-storage:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyDebugJniLibsProjectAndLocalJars
+> Task :react-native-async-storage_async-storage:extractDebugAnnotations
+> Task :react-native-async-storage_async-storage:extractDeepLinksForAarDebug
+> Task :react-native-async-storage_async-storage:mergeDebugGeneratedProguardFiles
+> Task :react-native-async-storage_async-storage:mergeDebugConsumerProguardFiles
+> Task :react-native-async-storage_async-storage:prepareDebugArtProfile
+> Task :react-native-async-storage_async-storage:prepareLintJarForPublish
+> Task :react-native-async-storage_async-storage:mergeDebugJavaResource
+> Task :react-native-async-storage_async-storage:syncDebugLibJars
+> Task :react-native-async-storage_async-storage:bundleDebugAar
+> Task :react-native-async-storage_async-storage:assembleDebug
+> Task :react-native-fs:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-fs:copyDebugJniLibsProjectAndLocalJars
+> Task :react-native-fs:extractDebugAnnotations
+> Task :react-native-fs:extractDeepLinksForAarDebug
+> Task :react-native-fs:mergeDebugGeneratedProguardFiles
+> Task :react-native-fs:mergeDebugConsumerProguardFiles
+> Task :react-native-fs:prepareDebugArtProfile
+> Task :react-native-fs:prepareLintJarForPublish
+> Task :react-native-fs:mergeDebugJavaResource
+> Task :react-native-fs:syncDebugLibJars
+> Task :react-native-fs:bundleDebugAar
+> Task :react-native-fs:assembleDebug
+> Task :react-native-safe-area-context:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-safe-area-context:copyDebugJniLibsProjectAndLocalJars
+> Task :react-native-safe-area-context:extractDebugAnnotations
+> Task :react-native-safe-area-context:extractDeepLinksForAarDebug
+> Task :react-native-safe-area-context:mergeDebugGeneratedProguardFiles
+> Task :react-native-safe-area-context:mergeDebugConsumerProguardFiles
+> Task :react-native-safe-area-context:prepareDebugArtProfile
+> Task :react-native-safe-area-context:prepareLintJarForPublish
+> Task :react-native-safe-area-context:mergeDebugJavaResource
+> Task :react-native-safe-area-context:syncDebugLibJars
+> Task :react-native-safe-area-context:bundleDebugAar
+> Task :react-native-safe-area-context:assembleDebug
+> Task :react-native-video:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-video:copyDebugJniLibsProjectAndLocalJars
+> Task :react-native-video:extractDebugAnnotations
+> Task :react-native-video:extractDeepLinksForAarDebug
+> Task :react-native-video:mergeDebugGeneratedProguardFiles
+> Task :react-native-video:mergeDebugConsumerProguardFiles
+> Task :react-native-video:prepareDebugArtProfile
+> Task :react-native-video:prepareLintJarForPublish
+> Task :react-native-video:mergeDebugJavaResource
+> Task :react-native-video:syncDebugLibJars
+> Task :react-native-video:bundleDebugAar
+> Task :react-native-video:assembleDebug
+> Task :app:mergeDebugNativeLibs
+> Task :app:stripDebugDebugSymbols
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+
+[Incubating] Problems report is available at: file:///D:/am/code/electron.js/AndroidControlSystem/NvAdPlayer/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 8m 22s
+182 actionable tasks: 82 executed, 100 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.0.0/userguide/configuration_cache_enabling.html
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if 0 EQU 0 goto mainEnd 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if "Windows_NT" == "Windows_NT" endlocal

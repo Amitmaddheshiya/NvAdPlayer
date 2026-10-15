@@ -1,0 +1,62 @@
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if "Windows_NT" == "Windows_NT" setlocal
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set DIRNAME=D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\ 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if "D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\" == "" set DIRNAME=. 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set APP_BASE_NAME=gradlew 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set APP_HOME=D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\ 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>for %i in ("D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\") do set APP_HOME=%~fi 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set APP_HOME=D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\ 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m" 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if defined JAVA_HOME goto findJavaFromJavaHome 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set JAVA_EXE=C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot/bin/java.exe 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if exist "C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot/bin/java.exe" goto execute 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>"C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot/bin/java.exe" "-Xmx64m" "-Xms64m"  -Djavax.net.ssl.trustStoreType=WINDOWS-ROOT "-Dorg.gradle.appname=gradlew" -jar "D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android\\gradle\wrapper\gradle-wrapper.jar" assembleDebug --console=plain --no-daemon --max-workers=2 
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :gradle-plugin:shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:classes UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:jar UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:classes UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:jar UP-TO-DATE
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if -1 EQU 0 goto mainEnd 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>rem the _cmd.exe /c_ return code! 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>set EXIT_CODE=-1 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if -1 EQU 0 set EXIT_CODE=1 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>if not "" == "" exit -1 
+
+D:\am\code\electron.js\AndroidControlSystem\NvAdPlayer\android>exit /b -1 
