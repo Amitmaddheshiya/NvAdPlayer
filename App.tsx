@@ -771,6 +771,7 @@ export default function App() {
   const [allSections, setSections] = useState<SectionData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const scanInFlightRef = useRef(false);
+  const scanFolderRef = useRef<(() => Promise<void>) | null>(null);
   const [pdfProgress, setPdfProgress] = useState({ active: false, percent: 0, file: '', currentPage: 0, totalPages: 0 });
   const pdfProgressVisibleRef = useRef(false);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
@@ -1004,7 +1005,7 @@ export default function App() {
     console.log('=== resolveAdsDirectory START ===');
     console.log('UsbModule available:', isUsbModuleAvailable());
 
-    if (isUsbModuleAvailable()) {
+    if (config.usePendrive && isUsbModuleAvailable()) {
       try {
         const usbState = await getCurrentUsbState();
         console.log('USB State received:', JSON.stringify(usbState));
@@ -1041,7 +1042,7 @@ export default function App() {
     console.log('=== resolveAdsDirectory END ===');
     console.log('Returning internal path:', internalDir);
     return internalDir;
-  }, []);
+  }, [config.usePendrive]);
 
   // Request storage permission
   const requestPermission = useCallback(async () => {
@@ -1265,6 +1266,12 @@ export default function App() {
     }
   }, [allSections.length, config.usePendrive, resolveAdsDirectory]);
 
+  // USB callbacks outlive a render. Always invoke the latest scanner after a
+  // mode change, otherwise an old closure can scan the previous storage path.
+  useEffect(() => {
+    scanFolderRef.current = scanFolder;
+  }, [scanFolder]);
+
   // Per-page progress comes directly from the native PdfRenderer background worker.
   useEffect(() => {
     const pdfConverter = (RNNativeModules as any)?.PdfConversionModule;
@@ -1361,12 +1368,29 @@ export default function App() {
   // Check if all sections are empty
   const totalMediaCount = sections.reduce((acc, sec) => acc + sec.files.length, 0);
 
-  // Auto USB detection - switch between USB nvsign and internal storage nvsign automatically
+  // USB is the source of truth: inserting a drive enables USB mode and removing
+  // it returns playback to the CMS/internal nvsign folder.
   useEffect(() => {
     if (!isUsbModuleAvailable()) return;
 
-    const unsubscribe = subscribeUsbState((usbState) => {
+    let disposed = false;
+    const syncUsbMode = (usbState: UsbState) => {
+      if (disposed) return;
       console.log('USB state changed:', JSON.stringify(usbState));
+      const shouldUsePendrive = usbState.mounted;
+      setConfig((previous) => {
+        if (previous.usePendrive === shouldUsePendrive) return previous;
+        const next = { ...previous, usePendrive: shouldUsePendrive };
+        AsyncStorage.setItem('tvads_config', JSON.stringify(next))
+          .catch((error) => console.warn('Could not persist automatic USB mode:', error));
+        return next;
+      });
+      setTempConfig((previous) => (
+        previous.usePendrive === shouldUsePendrive
+          ? previous
+          : { ...previous, usePendrive: shouldUsePendrive }
+      ));
+
       if (usbState.mounted) {
         console.log('USB detected - scanning USB storage...');
         setShowUsbPopup(true);
@@ -1376,13 +1400,22 @@ export default function App() {
       } else {
         console.log('USB removed - switching back to internal storage...');
       }
+      // Let the config state and its scanner closure update first.
       setTimeout(() => {
-        scanFolder();
-      }, 500);
-    });
+        scanFolderRef.current?.();
+      }, 600);
+    };
 
-    return () => unsubscribe();
-  }, [scanFolder]);
+    getCurrentUsbState().then(syncUsbMode).catch((error) => {
+      console.warn('Could not read initial USB state:', error);
+    });
+    const unsubscribe = subscribeUsbState(syncUsbMode);
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+    };
+  }, []);
 
   // Kiosk mode - enable/disable native kiosk mode when config changes
   useEffect(() => {
@@ -2430,7 +2463,7 @@ export default function App() {
                         tempConfig.usePendrive && styles.choiceTextActive,
                       ]}
                     >
-                      ON
+                      YES
                     </Text>
                   </Pressable>
                   <Pressable
@@ -2446,6 +2479,14 @@ export default function App() {
                       pressed && styles.btnPressed,
                     ]}
                   >
+                    <Text
+                      style={[
+                        styles.choiceText,
+                        !tempConfig.usePendrive && styles.choiceTextActive,
+                      ]}
+                    >
+                      NO
+                    </Text>
                   </Pressable>
                 </View>
               </View>

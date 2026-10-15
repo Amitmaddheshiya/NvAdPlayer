@@ -345,6 +345,54 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         fileOrDirectory.delete();
     }
 
+    private boolean isVideoFile(String fileName) {
+        String name = String.valueOf(fileName == null ? "" : fileName).toLowerCase(java.util.Locale.US);
+        return name.endsWith(".mp4") || name.endsWith(".m4v") || name.endsWith(".mov")
+                || name.endsWith(".mkv") || name.endsWith(".avi") || name.endsWith(".3gp")
+                || name.endsWith(".3g2") || name.endsWith(".wmv") || name.endsWith(".flv")
+                || name.endsWith(".mpg") || name.endsWith(".mpeg") || name.endsWith(".ts")
+                || name.endsWith(".mts") || name.endsWith(".m2ts") || name.endsWith(".vob")
+                || name.endsWith(".ogv") || name.endsWith(".asf") || name.endsWith(".f4v")
+                || name.endsWith(".webm");
+    }
+
+    private boolean containsVideo(File sectionDir) {
+        File[] files = sectionDir != null ? sectionDir.listFiles() : null;
+        if (files == null) return false;
+        for (File file : files) {
+            if (file.isFile() && isVideoFile(file.getName())) return true;
+        }
+        return false;
+    }
+
+    /** A CMS may use video in two distinct sections; image-only sections are unrestricted. */
+    private boolean canUploadVideoToSection(String section, String fileName) {
+        if (!isVideoFile(fileName)) return true;
+        File mediaRoot = getNvsignDir();
+        File targetSection = new File(mediaRoot, section);
+        // Existing video sections may receive more videos or replace a video.
+        if (containsVideo(targetSection)) return true;
+
+        int videoSectionCount = 0;
+        File[] sections = mediaRoot.listFiles();
+        if (sections != null) {
+            for (File candidate : sections) {
+                if (candidate.isDirectory() && containsVideo(candidate)) {
+                    videoSectionCount++;
+                }
+            }
+        }
+        return videoSectionCount < 2;
+    }
+
+    private Response videoSectionLimitResponse() {
+        return addCors(newFixedLengthResponse(
+                Status.CONFLICT,
+                "application/json",
+                "{\"error\":\"Video uploads are allowed in only 2 sections. Delete videos from an existing video section before uploading here.\"}"
+        ));
+    }
+
     private Response handleStreamingUpload(IHTTPSession session) {
         try {
             // Get content-type and extract boundary
@@ -372,6 +420,10 @@ public class EmbeddedCmsServer extends NanoHTTPD {
             List<String> fileNameList = params.get("filename");
             String fileName = (fileNameList != null && !fileNameList.isEmpty()) ? fileNameList.get(0) : "uploaded_large_file.mkv";
             fileName = fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+
+            if (!canUploadVideoToSection(section, fileName)) {
+                return videoSectionLimitResponse();
+            }
 
             File secDir = new File(getNvsignDir(), section);
             if (!secDir.exists()) {
@@ -880,15 +932,19 @@ public class EmbeddedCmsServer extends NanoHTTPD {
                     List<String> secList = parameters.get("section");
                     String section = (secList != null && !secList.isEmpty()) ? secList.get(0) : "section1";
 
-                    File secDir = new File(getNvsignDir(), section);
-                    if (!secDir.exists()) {
-                        secDir.mkdirs();
-                    }
-
                     List<String> fileNames = parameters.get("file");
                     String originalFileName = (fileNames != null && !fileNames.isEmpty()) ? fileNames.get(0) : "uploaded_media.mp4";
 
                     originalFileName = originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+
+                    if (!canUploadVideoToSection(section, originalFileName)) {
+                        return videoSectionLimitResponse();
+                    }
+
+                    File secDir = new File(getNvsignDir(), section);
+                    if (!secDir.exists()) {
+                        secDir.mkdirs();
+                    }
 
                     String tmpPath = files.get("file");
                     if (tmpPath != null) {
@@ -2050,6 +2106,11 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("    function uploadFiles(fileList) {\n");
         html.append("      if (!fileList || fileList.length === 0) return;\n");
         html.append("      const files = Array.from(fileList);\n");
+        html.append("      const videoFilePattern = /\\.(mp4|m4v|mov|mkv|avi|3gp|3g2|wmv|flv|mpg|mpeg|ts|mts|m2ts|vob|ogv|asf|f4v|webm)$/i;\n");
+        html.append("      const includesVideo = files.some(file => videoFilePattern.test(file.name || ''));\n");
+        html.append("      const currentSectionHasVideo = (allMedia[currentSection] || []).some(file => videoFilePattern.test(file.name || ''));\n");
+        html.append("      const otherVideoSections = Object.keys(allMedia).filter(section => section !== currentSection && (allMedia[section] || []).some(file => videoFilePattern.test(file.name || ''))).length;\n");
+        html.append("      if (includesVideo && !currentSectionHasVideo && otherVideoSections >= 2) { showAlert('Video uploads are allowed in only 2 sections. Delete videos from an existing video section before uploading here.'); return; }\n");
         html.append("      const totalFiles = files.length;\n");
         html.append("      let completedFiles = 0;\n");
         html.append("      let totalBytes = 0;\n");
@@ -2086,7 +2147,8 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("        let uploadFailed = false;\n");
         html.append("        ips.forEach(ip => {\n");
         html.append("          const xhr = new XMLHttpRequest();\n");
-        html.append("          xhr.open('POST', targetUrl(ip, '/api/upload'), true);\n");
+        html.append("          const uploadPath = '/api/upload?section=' + encodeURIComponent(currentSection) + '&filename=' + encodeURIComponent(file.name);\n");
+        html.append("          xhr.open('POST', targetUrl(ip, uploadPath), true);\n");
         html.append("          xhr.upload.onprogress = function(e) {\n");
         html.append("            if (e.lengthComputable && ip === ips[0]) {\n");
         html.append("              const overallPercent = Math.min(100, Math.round(((uploadedBytesPrior + e.loaded) / totalBytes) * 100));\n");
@@ -2096,14 +2158,15 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("              progressSub.innerText = `${index} of ${totalFiles} complete`;\n");
         html.append("            }\n");
         html.append("          };\n");
-        html.append("          const finishUpload = function(ok) {\n");
-        html.append("            uploadsDone++; if (!ok) uploadFailed = true;\n");
+        html.append("          let uploadError = '';\n");
+        html.append("          const finishUpload = function(ok, errorMessage) {\n");
+        html.append("            uploadsDone++; if (!ok) { uploadFailed = true; if (!uploadError && errorMessage) uploadError = errorMessage; }\n");
         html.append("            if (uploadsDone !== ips.length) return;\n");
-        html.append("            if (uploadFailed) { showAlert(`Upload failed on one or more TVs for ${file.name}.`); progressBox.style.display = 'none'; return; }\n");
+        html.append("            if (uploadFailed) { showAlert(uploadError || `Upload failed on one or more TVs for ${file.name}.`); progressBox.style.display = 'none'; return; }\n");
         html.append("            uploadedBytesPrior += file.size; completedFiles++; uploadNext(index + 1);\n");
         html.append("          };\n");
-        html.append("          xhr.onload = function() { finishUpload(xhr.status >= 200 && xhr.status < 300); };\n");
-        html.append("          xhr.onerror = function() { finishUpload(false); };\n");
+        html.append("          xhr.onload = function() { let errorMessage = ''; if (xhr.status < 200 || xhr.status >= 300) { try { errorMessage = (JSON.parse(xhr.responseText || '{}').error || ''); } catch (_) {} } finishUpload(xhr.status >= 200 && xhr.status < 300, errorMessage); };\n");
+        html.append("          xhr.onerror = function() { finishUpload(false, 'Upload failed. Check the TV connection and try again.'); };\n");
         html.append("          xhr.send(formData);\n");
         html.append("        });\n");
         html.append("      }\n");
