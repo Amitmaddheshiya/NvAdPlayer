@@ -73,7 +73,7 @@ class KioskWatchdogService : Service() {
         val isLocked = isKioskLockedFromConfig()
         KioskModule.isKioskLocked = isLocked
 
-        if (!isLocked) {
+        if (!isLocked || MainActivity.isKioskRelaunchSuppressed()) {
             // Kiosk is UNLOCKED (OFF): Disable auto-relaunch feature completely
             return
         }

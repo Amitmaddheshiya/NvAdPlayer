@@ -2,6 +2,7 @@ package com.nvadplayer
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -24,6 +25,7 @@ class MainActivity : ReactActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    activeActivity = this
     
     // 1. AGGRESSIVE Fullscreen - Force window to cover entire display
     window.addFlags(
@@ -33,18 +35,17 @@ class MainActivity : ReactActivity() {
       WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
       WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON or
       WindowManager.LayoutParams.FLAG_FULLSCREEN or
-      WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
       WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
     )
+    // This flag lets an activity draw beyond the physical display. Several TV
+    // firmwares then retain stale bounds after rotation, producing black bands.
+    window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
-    // 2. Force window to be fullscreen and ignore system decorations
+    // Keep the window constrained to the physical display. Fullscreen is
+    // maintained below with the platform insets controller and legacy flags.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
     }
-
-    // 3. Disable fitsSystemWindows to prevent padding from system bars
-    val decorView = window.decorView
-    decorView.fitsSystemWindows = false
 
     // 4. Acquire persistent PowerManager WakeLock to prevent TV screensaver / sleep
     try {
@@ -63,6 +64,9 @@ class MainActivity : ReactActivity() {
 
     // 5. Set aggressive sticky immersive full screen
     hideSystemUI()
+    // Some TV firmwares restore the navigation area one frame after the first
+    // layout or after a requested-orientation change. Re-apply after attach.
+    window.decorView.postDelayed({ hideSystemUI() }, 250L)
 
     // 6. Start 2-Second Kiosk Watchdog Foreground Service
     startWatchdogService()
@@ -70,22 +74,19 @@ class MainActivity : ReactActivity() {
 
   override fun onResume() {
     super.onResume()
+    activeActivity = this
     isActivityResumed = true
     
     // Re-apply aggressive fullscreen flags on resume
     window.addFlags(
       WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
       WindowManager.LayoutParams.FLAG_FULLSCREEN or
-      WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
       WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
     )
     
     if (wakeLock?.isHeld == false) {
       try { wakeLock?.acquire(10*60*1000L) } catch (_: Exception) {}
     }
-    
-    // Force fitsSystemWindows to false
-    window.decorView.fitsSystemWindows = false
     
     hideSystemUI()
     startWatchdogService()
@@ -94,7 +95,7 @@ class MainActivity : ReactActivity() {
   override fun onPause() {
     super.onPause()
     isActivityResumed = false
-    if (KioskModule.isKioskLocked) {
+    if (KioskModule.isKioskLocked && !isKioskRelaunchSuppressed()) {
       relaunchSelfImmediately()
     }
   }
@@ -115,7 +116,7 @@ class MainActivity : ReactActivity() {
   override fun onStop() {
     super.onStop()
     isActivityResumed = false
-    if (KioskModule.isKioskLocked) {
+    if (KioskModule.isKioskLocked && !isKioskRelaunchSuppressed()) {
       relaunchSelfImmediately()
     }
   }
@@ -128,9 +129,10 @@ class MainActivity : ReactActivity() {
         wakeLock?.release()
       }
     } catch (_: Exception) {}
-    if (KioskModule.isKioskLocked) {
+    if (KioskModule.isKioskLocked && !isKioskRelaunchSuppressed()) {
       relaunchSelfImmediately()
     }
+    if (activeActivity === this) activeActivity = null
   }
 
   private fun relaunchSelfImmediately() {
@@ -172,39 +174,51 @@ class MainActivity : ReactActivity() {
       window.addFlags(
         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
         WindowManager.LayoutParams.FLAG_FULLSCREEN or
-        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
       )
-      window.decorView.fitsSystemWindows = false
       hideSystemUI()
     }
+  }
+
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    // screenSize/orientation are handled in-process by the manifest. Let RN
+    // receive the new display bounds, then restore edge-to-edge immersive UI.
+    window.decorView.postDelayed({
+      window.addFlags(
+        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+          WindowManager.LayoutParams.FLAG_FULLSCREEN or
+          WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+      )
+      // Forces React Native's root view to measure using the newly rotated
+      // display dimensions instead of retaining the previous half-size bounds.
+      window.decorView.requestLayout()
+      hideSystemUI()
+    }, 250L)
   }
 
   private fun hideSystemUI() {
     try {
       val decorView = window.decorView
+      // Android 11+ does not reliably honour only the legacy flags.  Use the
+      // insets controller as well so the React surface occupies the full TV.
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        // Android 11+: legacy systemUiVisibility flags are no longer reliable.
-        // Hide both bars through the current insets API and allow only a
-        // transient swipe reveal, after which focus/resume hides them again.
         window.setDecorFitsSystemWindows(false)
         window.insetsController?.apply {
           hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
           systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
-      } else {
-        @Suppress("DEPRECATION")
-        run {
-          decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+      }
+      @Suppress("DEPRECATION")
+      run {
+        decorView.systemUiVisibility = (
+          View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
             View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
             View.SYSTEM_UI_FLAG_FULLSCREEN or
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-            View.SYSTEM_UI_FLAG_LOW_PROFILE
-          )
-        }
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        )
       }
     } catch (e: Exception) {
       e.printStackTrace()
@@ -312,6 +326,41 @@ class MainActivity : ReactActivity() {
     @JvmStatic
     @Volatile
     var isActivityResumed: Boolean = false
+
+    @Volatile
+    private var suppressKioskRelaunchUntil: Long = 0L
+
+    @Volatile
+    private var activeActivity: MainActivity? = null
+
+    /**
+     * Keep the Android activity in the TV's full-sensor landscape surface.
+     * The CMS orientation itself is rendered by the React root view (as in the
+     * working TvAdsPlayer), allowing portrait signage to occupy the complete
+     * physical display even when a TV's hardware sensor is disabled.
+     */
+    @JvmStatic
+    fun applyCmsOrientation(@Suppress("UNUSED_PARAMETER") orientation: String?) {
+      val activity = activeActivity ?: return
+      activity.runOnUiThread {
+        suppressKioskRelaunchFor(2500L)
+        activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        // Re-apply fullscreen after returning from any old portrait lock.
+        activity.window.decorView.postDelayed({
+          activity.window.decorView.requestLayout()
+          activity.hideSystemUI()
+        }, 350L)
+      }
+    }
+
+    @JvmStatic
+    fun suppressKioskRelaunchFor(durationMs: Long) {
+      suppressKioskRelaunchUntil = android.os.SystemClock.elapsedRealtime() + durationMs
+    }
+
+    @JvmStatic
+    fun isKioskRelaunchSuppressed(): Boolean =
+      android.os.SystemClock.elapsedRealtime() < suppressKioskRelaunchUntil
   }
 }
 

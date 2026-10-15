@@ -1,7 +1,5 @@
 package com.nvadplayer;
 
-import android.app.Activity;
-import android.content.pm.ActivityInfo;
 import android.provider.Settings;
 import android.content.Context;
 
@@ -33,30 +31,9 @@ public class DeviceIdModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void applyOrientation(String orientation) {
-        final Activity activity = getCurrentActivity();
-        if (activity == null) return;
-
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    int requestedOrientation;
-                    if ("vertical".equals(orientation)) {
-                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
-                    } else if ("reverse-vertical".equals(orientation)) {
-                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-                    } else if ("reverse-horizontal".equals(orientation)) {
-                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-                    } else {
-                        // Match the TV's actual display orientation. This avoids
-                        // letterboxing on portrait panels or ADB-rotated displays.
-                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR;
-                    }
-                    activity.setRequestedOrientation(requestedOrientation);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        // The Activity owns orientation.  Going through it also works for a
+        // CMS request, which is received on the HTTP server thread rather than
+        // React Native's current-activity lifecycle.
+        MainActivity.applyCmsOrientation(orientation);
     }
 }

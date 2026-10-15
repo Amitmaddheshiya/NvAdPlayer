@@ -66,16 +66,6 @@ interface SectionData {
 
 type MediaTransition = 'none' | 'fade' | 'slide_left' | 'slide_right' | 'slide_up' | 'slide_down' | 'zoom_in' | 'zoom_out' | 'flip' | 'rotate';
 
-interface PlaylistSchedule {
-  id: string;
-  enabled: boolean;
-  sectionId: string;
-  startDate?: string;
-  endDate?: string;
-  weekdays?: number[];
-  startTime?: string;
-  endTime?: string;
-}
 
 import { requireNativeComponent } from 'react-native';
 
@@ -309,39 +299,6 @@ const ORIENTATION_OPTIONS = [
   { label: 'Reverse Vertical', value: 'reverse-vertical' },
 ];
 
-const dateStamp = (date: Date) => {
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${m}-${d}`;
-};
-
-const minutesFromTime = (value?: string) => {
-  if (!value || !/^\d{2}:\d{2}$/.test(value)) return null;
-  const [hours, minutes] = value.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const isScheduleActive = (schedule: PlaylistSchedule, now: Date) => {
-  if (!schedule.enabled || !schedule.sectionId) return false;
-  const today = dateStamp(now);
-  if (schedule.startDate && today < schedule.startDate) return false;
-  if (schedule.endDate && today > schedule.endDate) return false;
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const start = minutesFromTime(schedule.startTime);
-  const end = minutesFromTime(schedule.endTime);
-  const crossesMidnight = start !== null && end !== null && start > end;
-  const applicableDay = crossesMidnight && currentMinutes <= (end ?? 0)
-    ? (now.getDay() + 6) % 7
-    : now.getDay();
-  if (schedule.weekdays?.length && !schedule.weekdays.includes(applicableDay)) return false;
-  if (start !== null && end !== null) {
-    return crossesMidnight ? currentMinutes >= start || currentMinutes <= end : currentMinutes >= start && currentMinutes <= end;
-  }
-  if (start !== null) return currentMinutes >= start;
-  if (end !== null) return currentMinutes <= end;
-  return true;
-};
-
 // Config interface
 interface AppConfig {
   slideDuration: number;
@@ -352,12 +309,8 @@ interface AppConfig {
   tickerFontSize: number;
   tickerFontFamily?: string;
   tickerSpeed?: number;
-  tickerGap?: number;
   tickerDirection?: 'left' | 'right';
-  tickerPaused?: boolean;
-  tickerSchedule?: { enabled?: boolean; startTime?: string; endTime?: string; weekdays?: number[] };
   mediaTransition?: MediaTransition;
-  playlistSchedules?: PlaylistSchedule[];
   usePendrive: boolean;
   resizeMode: 'contain' | 'cover' | 'stretch';
   kioskMode?: boolean;
@@ -406,11 +359,8 @@ const DEFAULT_CONFIG: AppConfig = {
   tickerFontSize: 16,
   tickerFontFamily: 'sans-serif',
   tickerSpeed: 5,
-  tickerGap: 5,
   tickerDirection: 'left',
-  tickerPaused: false,
   mediaTransition: 'fade',
-  playlistSchedules: [],
   usePendrive: false,
   resizeMode: 'stretch',
   kioskMode: true,
@@ -698,7 +648,6 @@ const ContinuousTicker = React.memo(({
   fontSize,
   fontFamily,
   speed = 5,
-  gap = 5,
   direction = 'left',
   paused,
   overlay = false,
@@ -709,7 +658,6 @@ const ContinuousTicker = React.memo(({
   fontSize: number;
   fontFamily?: string;
   speed?: number;
-  gap?: number;
   direction?: 'left' | 'right';
   paused: boolean;
   overlay?: boolean;
@@ -719,7 +667,7 @@ const ContinuousTicker = React.memo(({
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const lastMeasuredWidth = useRef(0);
   const tickerText = String(text || '');
-  const space = ' '.repeat(Math.max(1, Math.round(Math.max(0, Math.min(30, gap)) * 2)));
+  const space = ' '.repeat(10);
   const measurementText = `${tickerText}${space}•${space}`;
   const fallbackWidth = Math.ceil(
     Math.max(1, Array.from(measurementText).length) * Math.max(12, fontSize) * 2 + 64,
@@ -822,6 +770,7 @@ const getRatioFlex = (ratio?: string, isFirst?: boolean) => {
 export default function App() {
   const [allSections, setSections] = useState<SectionData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const scanInFlightRef = useRef(false);
   const [pdfProgress, setPdfProgress] = useState({ active: false, percent: 0, file: '', currentPage: 0, totalPages: 0 });
   const pdfProgressVisibleRef = useRef(false);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
@@ -843,18 +792,7 @@ export default function App() {
     message: '',
     sound: false,
   });
-  const [scheduleClock, setScheduleClock] = useState(() => new Date());
-  useEffect(() => {
-    const timer = setInterval(() => setScheduleClock(new Date()), 15000);
-    return () => clearInterval(timer);
-  }, []);
-  const activePlaylistSchedule = (config.playlistSchedules || []).find((schedule) => isScheduleActive(schedule, scheduleClock));
-  const sections = activePlaylistSchedule
-    ? allSections.filter((section) => section.id === activePlaylistSchedule.sectionId)
-    : allSections;
-  const tickerScheduleActive = !config.tickerSchedule?.enabled || isScheduleActive({
-    id: 'ticker', enabled: true, sectionId: 'ticker', ...config.tickerSchedule,
-  }, scheduleClock);
+  const sections = allSections;
 
   // License/Activation states
   const [licenseDeviceId, setLicenseDeviceId] = useState<string>('');
@@ -1156,8 +1094,13 @@ export default function App() {
 
   // Scan and load section media folders with memory optimization
   const scanFolder = useCallback(async () => {
+    // USB/media watchers run in the background. Never overlap scans and never
+    // put an already-playing screen back into a loading state: that unmounts
+    // native video surfaces and restarts an in-progress video.
+    if (scanInFlightRef.current) return;
+    scanInFlightRef.current = true;
     console.log('=== scanFolder START ===');
-    setLoading(true);
+    if (allSections.length === 0) setLoading(true);
     try {
       console.log('Scanning folder with usePendrive:', config.usePendrive);
       const resolvedDir = await resolveAdsDirectory();
@@ -1316,10 +1259,11 @@ export default function App() {
           setLoading(false);
         }, 500);
       } else {
-        setLoading(false);
+        if (allSections.length === 0) setLoading(false);
       }
+      scanInFlightRef.current = false;
     }
-  }, [config.usePendrive, resolveAdsDirectory]);
+  }, [allSections.length, config.usePendrive, resolveAdsDirectory]);
 
   // Per-page progress comes directly from the native PdfRenderer background worker.
   useEffect(() => {
@@ -1733,12 +1677,35 @@ export default function App() {
     );
   }
 
+  // Mirror the known-good TV player: keep Android in its full-sensor landscape
+  // surface and rotate the complete React player canvas for the CMS choice.
+  // This is reliable on wall-mounted TVs whose physical rotation sensor is off.
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const width = Math.max(screenWidth || 1920, screenHeight || 1080);
+  const height = Math.min(screenWidth || 1920, screenHeight || 1080);
+  const orientation = config.orientation || 'horizontal';
+  const isVertical = orientation === 'vertical' || orientation === 'reverse-vertical';
+  const rotation = orientation === 'vertical'
+    ? '90deg'
+    : orientation === 'reverse-vertical'
+      ? '-90deg'
+      : orientation === 'reverse-horizontal'
+        ? '180deg'
+        : '0deg';
+  const containerWidth = isVertical ? height : width;
+  const containerHeight = isVertical ? width : height;
+  const topOffset = (height - containerHeight) / 2;
+  const leftOffset = (width - containerWidth) / 2;
+
   return (
     <View
       style={{
-        flex: 1,
-        width: '100%',
-        height: '100%',
+        width: containerWidth,
+        height: containerHeight,
+        position: 'absolute',
+        top: topOffset,
+        left: leftOffset,
+        transform: [{ rotate: rotation }],
         backgroundColor: '#000000',
         overflow: 'hidden',
       }}
@@ -1755,9 +1722,8 @@ export default function App() {
             fontSize={config.tickerFontSize || 16}
             fontFamily={config.tickerFontFamily}
             speed={config.tickerSpeed || 5}
-            gap={config.tickerGap || 0}
             direction={config.tickerDirection || 'left'}
-            paused={configOpen || !!config.tickerPaused || !tickerScheduleActive}
+            paused={configOpen}
           />
         )}
 
@@ -2156,9 +2122,8 @@ export default function App() {
             fontSize={config.tickerFontSize || 16}
             fontFamily={config.tickerFontFamily}
             speed={config.tickerSpeed || 5}
-            gap={config.tickerGap || 0}
             direction={config.tickerDirection || 'left'}
-            paused={configOpen || !!config.tickerPaused || !tickerScheduleActive}
+            paused={configOpen}
           />
         )}
 
@@ -2171,9 +2136,8 @@ export default function App() {
             fontSize={config.tickerFontSize || 16}
             fontFamily={config.tickerFontFamily}
             speed={config.tickerSpeed || 5}
-            gap={config.tickerGap || 0}
             direction={config.tickerDirection || 'left'}
-            paused={configOpen || !!config.tickerPaused || !tickerScheduleActive}
+            paused={configOpen}
             overlay
           />
         )}

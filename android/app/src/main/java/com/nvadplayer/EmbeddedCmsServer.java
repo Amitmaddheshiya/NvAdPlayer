@@ -234,19 +234,35 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         return new File(getNvsignDir(), "config.json");
     }
 
-    private JSONObject readConfigJson() {
+    /** Internal storage survives even when external-storage access is delayed at boot. */
+    private File getPrivateConfigFile() {
+        return new File(reactContext.getFilesDir(), "config.json");
+    }
+
+    private JSONObject readConfigFile(File file) {
         try {
-            File configFile = getConfigFile();
-            if (configFile.exists()) {
-                FileInputStream fis = new FileInputStream(configFile);
-                byte[] data = new byte[(int) configFile.length()];
-                fis.read(data);
-                fis.close();
-                return new JSONObject(new String(data, "UTF-8"));
+            if (!file.exists() || file.length() <= 0) return null;
+            try (FileInputStream fis = new FileInputStream(file)) {
+                byte[] data = new byte[(int) file.length()];
+                int offset = 0;
+                while (offset < data.length) {
+                    int count = fis.read(data, offset, data.length - offset);
+                    if (count < 0) break;
+                    offset += count;
+                }
+                return new JSONObject(new String(data, 0, offset, "UTF-8"));
             }
         } catch (Exception e) {
-            Log.w(TAG, "Error reading config.json", e);
+            Log.w(TAG, "Ignoring invalid saved config: " + file.getAbsolutePath(), e);
+            return null;
         }
+    }
+
+    private JSONObject readConfigJson() {
+        JSONObject externalConfig = readConfigFile(getConfigFile());
+        if (externalConfig != null) return externalConfig;
+        JSONObject privateConfig = readConfigFile(getPrivateConfigFile());
+        if (privateConfig != null) return privateConfig;
         // Default Config
         JSONObject defaultConfig = new JSONObject();
         try {
@@ -258,11 +274,8 @@ public class EmbeddedCmsServer extends NanoHTTPD {
             defaultConfig.put("tickerFontSize", 16);
             defaultConfig.put("tickerFontFamily", "sans-serif");
             defaultConfig.put("tickerSpeed", 5);
-            defaultConfig.put("tickerGap", 5);
             defaultConfig.put("tickerDirection", "left");
-            defaultConfig.put("tickerPaused", false);
             defaultConfig.put("mediaTransition", "fade");
-            defaultConfig.put("playlistSchedules", new JSONArray());
             defaultConfig.put("usePendrive", false);
             defaultConfig.put("resizeMode", "stretch");
             defaultConfig.put("orientation", "horizontal");
@@ -275,13 +288,27 @@ public class EmbeddedCmsServer extends NanoHTTPD {
     }
 
     private void writeConfigJson(JSONObject config) {
+        byte[] payload;
         try {
-            File configFile = getConfigFile();
-            FileOutputStream fos = new FileOutputStream(configFile);
-            fos.write(config.toString(2).getBytes("UTF-8"));
-            fos.close();
+            payload = config.toString(2).getBytes("UTF-8");
         } catch (Exception e) {
-            Log.e(TAG, "Error writing config.json", e);
+            Log.e(TAG, "Could not encode config", e);
+            return;
+        }
+        writeConfigAtomically(getPrivateConfigFile(), payload);
+        writeConfigAtomically(getConfigFile(), payload);
+    }
+
+    private void writeConfigAtomically(File target, byte[] payload) {
+        File temp = new File(target.getParentFile(), target.getName() + ".tmp");
+        try (FileOutputStream fos = new FileOutputStream(temp)) {
+            fos.write(payload);
+            fos.getFD().sync();
+            if (target.exists() && !target.delete()) throw new java.io.IOException("Could not replace config");
+            if (!temp.renameTo(target)) throw new java.io.IOException("Could not finalize config");
+        } catch (Exception e) {
+            Log.e(TAG, "Error writing config: " + target.getAbsolutePath(), e);
+            if (temp.exists()) temp.delete();
         }
     }
 
@@ -512,6 +539,8 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         res.addHeader("Access-Control-Allow-Origin", "*");
         res.addHeader("Access-Control-Allow-Headers", "origin, content-type, accept, authorization");
         res.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD");
+        res.addHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        res.addHeader("Pragma", "no-cache");
         return res;
     }
     @Override
@@ -564,6 +593,9 @@ public class EmbeddedCmsServer extends NanoHTTPD {
                         newConfig.put("tickerText", toggleTickerTerminalPeriod(decodeUtf8Base64(updates, "tickerTextBase64")));
                     }
                     writeConfigJson(newConfig);
+                    // Match the reference CMS: orientation is a native device
+                    // command, not only a JS state update that may arrive late.
+                    MainActivity.applyCmsOrientation(newConfig.optString("orientation", "horizontal"));
                     emitEventToJS("config-updated", newConfig.toString());
                     emitEventToJS("media-updated", "config-save");
                     return addCors(newFixedLengthResponse(Status.OK, "application/json", "{\"success\":true}"));
@@ -1251,14 +1283,20 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("              <option value=\"sans-serif\">Sans-Serif (Default Standard)</option>\n");
         html.append("              <option value=\"serif\">Serif (Classic Times/Georgia)</option>\n");
         html.append("              <option value=\"monospace\">Monospace (Fixed Width Code)</option>\n");
-        html.append("              <option value=\"cursive\">Cursive (Handwriting Script)</option>\n");
-        html.append("              <option value=\"fantasy\">Fantasy (Decorative Display)</option>\n");
-        html.append("              <option value=\"Roboto\">Roboto (Clean Modern)</option>\n");
-        html.append("              <option value=\"Montserrat\">Montserrat (Geometric Sans)</option>\n");
-        html.append("              <option value=\"Oswald\">Oswald (Condensed Bold)</option>\n");
-        html.append("              <option value=\"Poppins\">Poppins (Rounded Modern)</option>\n");
-        html.append("              <option value=\"Impact\">Impact (Heavy Title)</option>\n");
+        html.append("              <option value=\"sans-serif-condensed\">Sans Condensed</option>\n");
+        html.append("              <option value=\"sans-serif-smallcaps\">Sans Small Caps</option>\n");
+        html.append("              <option value=\"sans-serif-light\">Sans Light</option>\n");
+        html.append("              <option value=\"sans-serif-medium\">Sans Medium</option>\n");
+        html.append("              <option value=\"sans-serif-thin\">Sans Thin</option>\n");
+        html.append("              <option value=\"sans-serif-black\">Sans Black</option>\n");
+        html.append("              <option value=\"casual\">Casual</option>\n");
         html.append("            </select>\n");
+        html.append("          </div>\n");
+        html.append("          <div class=\"form-group\">\n");
+        html.append("            <label class=\"form-label\">Ticker Direction</label><select id=\"tickerDirection\"><option value=\"left\">Right to Left</option><option value=\"right\">Left to Right</option></select>\n");
+        html.append("          </div>\n");
+        html.append("          <div class=\"form-group\">\n");
+        html.append("            <label class=\"form-label\">Media Transition</label><select id=\"mediaTransition\"><option value=\"none\">None</option><option value=\"fade\">Fade</option><option value=\"slide_left\">Slide Left</option><option value=\"slide_right\">Slide Right</option><option value=\"slide_up\">Slide Up</option><option value=\"slide_down\">Slide Down</option><option value=\"zoom_in\">Zoom In</option><option value=\"zoom_out\">Zoom Out</option><option value=\"flip\">Flip</option><option value=\"rotate\">Rotate</option></select>\n");
         html.append("          </div>\n");
         html.append("          <div class=\"form-group\">\n");
         html.append("            <label class=\"form-label\">Ticker Speed: <span id=\"tickerSpeedValue\">5</span></label>\n");
@@ -1274,10 +1312,10 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("            </select>\n");
         html.append("          </div>\n");
         html.append("          <div class=\"form-group\">\n");
-        html.append("            <label class=\"form-label\">Use USB Pendrive Mode</label>\n");
+        html.append("            <label class=\"form-label\">USB Pendrive Preference</label>\n");
         html.append("            <select id=\"usePendrive\">\n");
-        html.append("              <option value=\"false\">OFF (Internal Storage)</option>\n");
-        html.append("              <option value=\"true\">ON (USB Pendrive Storage)</option>\n");
+        html.append("              <option value=\"false\">USB Auto Priority (recommended)</option>\n");
+        html.append("              <option value=\"true\">USB Auto Priority (legacy compatible)</option>\n");
         html.append("            </select>\n");
         html.append("          </div>\n");
         html.append("          <div class=\"form-group\">\n");
@@ -1826,7 +1864,7 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("      renderFiles();\n");
         html.append("    }\n");
         html.append("    async function fetchConfig() {\n");
-        html.append("      const res = await fetch('/api/config');\n");
+        html.append("      const res = await fetch('/api/config?ts=' + Date.now(), { cache: 'no-store' });\n");
         html.append("      const cfg = await res.json();\n");
         html.append("      document.getElementById('orientation').value = cfg.orientation || 'horizontal';\n");
         html.append("      document.getElementById('slideDuration').value = cfg.slideDuration || 5000;\n");
@@ -1840,6 +1878,8 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("      document.getElementById('tickerFontFamily').value = cfg.tickerFontFamily || 'sans-serif';\n");
         html.append("      document.getElementById('tickerSpeed').value = cfg.tickerSpeed || 5;\n");
         html.append("      document.getElementById('tickerSpeedValue').textContent = cfg.tickerSpeed || 5;\n");
+        html.append("      document.getElementById('tickerDirection').value = cfg.tickerDirection || 'left';\n");
+        html.append("      document.getElementById('mediaTransition').value = cfg.mediaTransition || 'fade';\n");
         html.append("      document.getElementById('resizeMode').value = cfg.resizeMode || 'stretch';\n");
         html.append("      document.getElementById('usePendrive').value = cfg.usePendrive ? 'true' : 'false';\n");
         html.append("      document.getElementById('showQrCode').value = cfg.showQrCode !== false ? 'true' : 'false';\n");
@@ -1872,6 +1912,8 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("        tickerFontSize: parseInt(document.getElementById('tickerFontSize').value, 10),\n");
         html.append("        tickerFontFamily: document.getElementById('tickerFontFamily').value,\n");
         html.append("        tickerSpeed: parseInt(document.getElementById('tickerSpeed').value, 10),\n");
+        html.append("        tickerDirection: document.getElementById('tickerDirection').value,\n");
+        html.append("        mediaTransition: document.getElementById('mediaTransition').value,\n");
         html.append("        resizeMode: document.getElementById('resizeMode').value,\n");
         html.append("        usePendrive: document.getElementById('usePendrive').value === 'true',\n");
         html.append("        showQrCode: document.getElementById('showQrCode').value === 'true',\n");
@@ -1893,7 +1935,7 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("      fetchConfig();\n");
         html.append("    }\n");
         html.append("    async function fetchMedia() {\n");
-        html.append("      const res = await sectionFetch('/api/media');\n");
+        html.append("      const res = await sectionFetch('/api/media?ts=' + Date.now(), { cache: 'no-store' });\n");
         html.append("      allMedia = await res.json();\n");
         html.append("      renderSectionTabs();\n");
         html.append("      renderFiles();\n");

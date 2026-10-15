@@ -26,6 +26,11 @@ class KioskAlarmReceiver : BroadcastReceiver() {
                 return
             }
 
+            if (MainActivity.isKioskRelaunchSuppressed()) {
+                scheduleNextAlarm(context)
+                return
+            }
+
             if (!MainActivity.isActivityResumed) {
                 Log.w(TAG, "MainActivity is NOT resumed via AlarmReceiver! Auto-relaunching in 2s!")
                 val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
