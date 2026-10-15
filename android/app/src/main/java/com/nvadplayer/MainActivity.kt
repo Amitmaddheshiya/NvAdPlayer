@@ -334,18 +334,17 @@ class MainActivity : ReactActivity() {
     private var activeActivity: MainActivity? = null
 
     /**
-     * Keep the Android activity in the TV's full-sensor landscape surface.
-     * The CMS orientation itself is rendered by the React root view (as in the
-     * working TvAdsPlayer), allowing portrait signage to occupy the complete
-     * physical display even when a TV's hardware sensor is disabled.
+     * Keep Android on the display's full sensor surface. CMS rotation remains
+     * rendered by the React root view, so this must not force landscape when a
+     * TV has been rotated through its OS or ADB.
      */
     @JvmStatic
     fun applyCmsOrientation(@Suppress("UNUSED_PARAMETER") orientation: String?) {
       val activity = activeActivity ?: return
       activity.runOnUiThread {
         suppressKioskRelaunchFor(2500L)
-        activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        // Re-apply fullscreen after returning from any old portrait lock.
+        activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        // Re-apply fullscreen after the full-sensor surface is measured.
         activity.window.decorView.postDelayed({
           activity.window.decorView.requestLayout()
           activity.hideSystemUI()

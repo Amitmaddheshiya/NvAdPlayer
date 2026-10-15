@@ -667,10 +667,9 @@ const ContinuousTicker = React.memo(({
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const lastMeasuredWidth = useRef(0);
   const tickerText = String(text || '');
-  const space = ' '.repeat(10);
-  const measurementText = `${tickerText}${space}•${space}`;
+  const measurementText = `${tickerText}  •  `;
   const fallbackWidth = Math.ceil(
-    Math.max(1, Array.from(measurementText).length) * Math.max(12, fontSize) * 2 + 64,
+    Math.max(1, Array.from(measurementText).length) * Math.max(12, fontSize) * 0.7 + 32,
   );
   const animationWidth = Math.ceil(measuredWidth) || fallbackWidth;
   const copyCount = Math.max(2, Math.ceil(viewportWidth / animationWidth) + 2);
@@ -684,8 +683,8 @@ const ContinuousTicker = React.memo(({
     translateX.stopAnimation();
     if (paused || !tickerText || viewportWidth <= 0) return;
 
-    // Exact unit width + repeated units keeps the handoff gap-free. The
-    // component is memoized, so media slide changes never restart this loop.
+    // Both directions hand off between two adjacent copies at x=0. Starting
+    // RTL at the viewport edge made Animated.loop reset through empty space.
     translateX.setValue(direction === 'right' ? -animationWidth : 0);
     const animation = Animated.loop(
       Animated.timing(translateX, {
@@ -717,13 +716,14 @@ const ContinuousTicker = React.memo(({
       <Animated.View
         style={[
           styles.tickerTrack,
-          { left: direction === 'right' ? 0 : viewportWidth, transform: [{ translateX }] },
+          { left: 0, transform: [{ translateX }] },
         ]}
       >
         <Text
+          numberOfLines={1}
           onTextLayout={(event) => {
             const lines = event.nativeEvent.lines || [];
-            const nextWidth = Math.ceil(lines.reduce((sum, line) => sum + (line.width || 0), 0));
+            const nextWidth = Math.ceil(lines[0]?.width || 0);
             if (nextWidth > 0 && Math.abs(nextWidth - lastMeasuredWidth.current) >= 1) {
               lastMeasuredWidth.current = nextWidth;
               setMeasuredWidth(nextWidth);
@@ -770,6 +770,7 @@ const getRatioFlex = (ratio?: string, isFirst?: boolean) => {
 export default function App() {
   const [allSections, setSections] = useState<SectionData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const playerWindowDimensions = useWindowDimensions();
   const scanInFlightRef = useRef(false);
   const scanFolderRef = useRef<(() => Promise<void>) | null>(null);
   const [pdfProgress, setPdfProgress] = useState({ active: false, percent: 0, file: '', currentPage: 0, totalPages: 0 });
@@ -1710,12 +1711,12 @@ export default function App() {
     );
   }
 
-  // Mirror the known-good TV player: keep Android in its full-sensor landscape
-  // surface and rotate the complete React player canvas for the CMS choice.
-  // This is reliable on wall-mounted TVs whose physical rotation sensor is off.
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-  const width = Math.max(screenWidth || 1920, screenHeight || 1080);
-  const height = Math.min(screenWidth || 1920, screenHeight || 1080);
+  // The CMS rotation mapping below stays unchanged. Use the real full-sensor
+  // display bounds so the player also fills a TV forced to portrait by ADB.
+  const screenWidth = playerWindowDimensions.width || Dimensions.get('window').width || 1920;
+  const screenHeight = playerWindowDimensions.height || Dimensions.get('window').height || 1080;
+  const width = screenWidth;
+  const height = screenHeight;
   const orientation = config.orientation || 'horizontal';
   const isVertical = orientation === 'vertical' || orientation === 'reverse-vertical';
   const rotation = orientation === 'vertical'
@@ -3181,9 +3182,9 @@ const styles = StyleSheet.create({
   tickerMeasureText: {
     position: 'absolute',
     opacity: 0,
-    left: 0,
+    left: -100000,
     top: 0,
-    width: '100%',
+    flexShrink: 0,
   },
   tickerText: {
     fontSize: 16,
