@@ -702,7 +702,6 @@ const ContinuousTicker = React.memo(({
 
   return (
     <View
-      renderToHardwareTextureAndroid
       style={[
         styles.tickerBar,
         overlay && styles.tickerBarOverlay,
@@ -714,6 +713,8 @@ const ContinuousTicker = React.memo(({
       ]}
     >
       <Animated.View
+        renderToHardwareTextureAndroid
+        collapsable={false}
         style={[
           styles.tickerTrack,
           { left: 0, transform: [{ translateX }] },
