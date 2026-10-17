@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   StyleSheet,
@@ -14,9 +15,6 @@ import {
   ScrollView,
   Animated,
   Easing,
-  PermissionsAndroid,
-  Alert,
-  Linking,
   Dimensions,
   useWindowDimensions,
   NativeEventEmitter,
@@ -71,7 +69,6 @@ import { requireNativeComponent } from 'react-native';
 
 const NativeExoPlayer = requireNativeComponent<any>('NativeVideoPlayerView');
 const NativeAndroidMediaPlayer = requireNativeComponent<any>('AndroidNativeMediaPlayerView');
-const NativeChromiumPlayer = requireNativeComponent<any>('SecondaryWebViewPlayer');
 
 interface SectionPlayerProps {
   section: SectionData;
@@ -123,7 +120,7 @@ const MediaTransitionView = ({ transition, changeKey, children }: { transition: 
 const SectionPlayer: React.FC<SectionPlayerProps> = ({
   section,
   sectionIndex,
-  totalSections,
+  totalSections: _totalSections,
   config,
   configOpen,
   onOpenConfig,
@@ -419,7 +416,7 @@ const WeatherWidget = ({ config }: { config: AppConfig }) => {
           return;
         }
         
-        const { latitude, longitude, name, country } = geoData.results[0];
+        const { latitude, longitude } = geoData.results[0];
         
         // Then fetch weather using the coordinates
         const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
@@ -776,12 +773,11 @@ export default function App() {
   const scanFolderRef = useRef<(() => Promise<void>) | null>(null);
   const [pdfProgress, setPdfProgress] = useState({ active: false, percent: 0, file: '', currentPage: 0, totalPages: 0 });
   const pdfProgressVisibleRef = useRef(false);
-  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [configOpen, setConfigOpen] = useState<boolean>(false);
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [tempConfig, setTempConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [resizeMode, setResizeMode] = useState<'contain' | 'cover' | 'stretch'>('stretch');
-  const [focusedIndex, setFocusedIndex] = useState<number>(0);
+  const [, setFocusedIndex] = useState<number>(0);
   const [focusedId, setFocusedId] = useState<string>('');
   const [showUsbPopup, setShowUsbPopup] = useState<boolean>(false);
   const licenseInputRef = useRef<any>(null);
@@ -915,6 +911,7 @@ export default function App() {
   // Permissions States
   const [hasStorage, setHasStorage] = useState<boolean>(false);
   const [permissionsLoaded, setPermissionsLoaded] = useState<boolean>(false);
+  const [networkConnected, setNetworkConnected] = useState<boolean | null>(null);
 
   // Request overlay permission
   // Active resolved ads directory path (internal or USB)
@@ -955,6 +952,17 @@ export default function App() {
       subscription?.remove();
     };
   }, []);
+
+  // A TV can receive a new address from DHCP while the app remains open. Refresh
+  // the connection details whenever the remote-control configuration page opens.
+  useEffect(() => {
+    if (!configOpen || !(RNNativeModules as any)?.CmsServerModule?.getIpAddress) return;
+    (RNNativeModules as any).CmsServerModule.getIpAddress()
+      .then((res: { url: string; qrCode: string }) => {
+        if (res?.url) setCmsInfo(res);
+      })
+      .catch((err: any) => console.warn('Failed to refresh CMS connection details:', err));
+  }, [configOpen]);
 
   // Load the durable CMS config first. AsyncStorage remains a local fallback.
   const loadConfig = useCallback(async () => {
@@ -1077,23 +1085,47 @@ export default function App() {
     }
   }, []);
 
+  const refreshNetworkStatus = useCallback(async () => {
+    if (!PermissionModule?.isNetworkConnected) {
+      setNetworkConnected(null);
+      return;
+    }
+    try {
+      setNetworkConnected(Boolean(await PermissionModule.isNetworkConnected()));
+    } catch (e) {
+      console.warn('Network status query failed:', e);
+      setNetworkConnected(null);
+    }
+  }, []);
+
+  const openWifiSettings = useCallback(async () => {
+    if (!PermissionModule?.openWifiSettings) return;
+    try {
+      await PermissionModule.openWifiSettings();
+    } catch (e) {
+      console.warn('Could not open Wi-Fi settings:', e);
+    }
+  }, []);
+
   // Check permissions on mount and when app returns from settings screen
   useEffect(() => {
     checkStoragePermission();
     loadConfig();
+    refreshNetworkStatus();
 
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
         // Only check permission if popup is not already showing
         checkStoragePermission();
         loadConfig();
+        refreshNetworkStatus();
       }
     });
 
     return () => {
       subscription.remove();
     };
-  }, [checkStoragePermission, loadConfig]);
+  }, [checkStoragePermission, loadConfig, refreshNetworkStatus]);
 
   // Scan and load section media folders with memory optimization
   const scanFolder = useCallback(async () => {
@@ -1167,7 +1199,7 @@ export default function App() {
             try {
               const orderData = await RNFS.readFile(orderFilePath, 'utf8');
               customOrder = JSON.parse(orderData);
-            } catch (_e) {}
+            } catch {}
           }
 
           if (customOrder.length > 0) {
@@ -1210,7 +1242,7 @@ export default function App() {
           try {
             const orderData = await RNFS.readFile(orderFilePath, 'utf8');
             customOrder = JSON.parse(orderData);
-          } catch (_e) {}
+          } catch {}
         }
 
         if (customOrder.length > 0) {
@@ -1321,51 +1353,20 @@ export default function App() {
         try {
           const payload = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
           setEmergencyAlert({ active: true, ...payload });
-        } catch (_e) {}
+        } catch {}
       } else if (event.type === 'clear-emergency') {
         setEmergencyAlert({ active: false, type: '', title: '', message: '', sound: false });
       } else if (event.type === 'layout-updated') {
         try {
           const layoutData = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
           setCustomLayout(layoutData);
-        } catch (_e) {}
+        } catch {}
       }
     });
     return () => {
       listener.remove();
     };
   }, [scanFolder]);
-
-  // Helper for responsive split-screen layouts
-  const getSectionStyle = (index: number, count: number) => {
-    if (count <= 1) {
-      return { flex: 1, width: '100%' as const, height: '100%' as const };
-    }
-    if (count === 2) {
-      return {
-        flex: 1,
-        height: '100%' as const,
-        borderRightWidth: index === 0 ? 2 : 0,
-        borderColor: '#3b82f6',
-      };
-    }
-    if (count === 3) {
-      return {
-        flex: 1,
-        height: '100%' as const,
-        borderRightWidth: index < 2 ? 2 : 0,
-        borderColor: '#3b82f6',
-      };
-    }
-    // 4 or more sections: grid layout (50% width, 50% height)
-    return {
-      width: '50%' as const,
-      height: '50%' as const,
-      borderRightWidth: index % 2 === 0 ? 1 : 0,
-      borderBottomWidth: index < 2 ? 1 : 0,
-      borderColor: '#3b82f6',
-    };
-  };
 
   // Check if all sections are empty
   const totalMediaCount = sections.reduce((acc, sec) => acc + sec.files.length, 0);
@@ -1653,7 +1654,6 @@ export default function App() {
       <View style={styles.darkContainer}>
         <StatusBar hidden />
         <View style={styles.instructionCard}>
-          <Text style={styles.emojiTitle}>NvAdPlayer</Text>
           <View style={styles.readyPill}><Text style={styles.readyPillText}>PLAYER READY</Text></View>
           <Text style={styles.emptyScreenTitle}>Your display is ready</Text>
           <Text style={styles.emptyScreenSubtitle}>Add content to begin playback</Text>
@@ -1682,21 +1682,28 @@ export default function App() {
             <Text style={styles.pathText}>{activeAdsDir}</Text>
           </View>
 
-          <View style={{ width: '100%', marginVertical: 12, paddingHorizontal: 8 }}>
-            <Text style={styles.emptyStepsTitle}>
-              💡 Easy Ways to Add Media Content:
-            </Text>
-            <Text style={styles.emptyStepsText}>
-              1. Open the CMS portal from a phone or computer on the same Wi-Fi:{'\n'}
-                 👉 <Text style={{ color: '#4ade80', fontWeight: 'bold' }}>{cmsInfo.url || 'http://<TV_IP>:9090'}</Text>{'\n'}
-              2. Insert a USB drive containing your media.{'\n'}
-              3. Or copy content into section folders at '{activeAdsDir}'.
-            </Text>
-          </View>
+          {networkConnected === false && (
+            <View style={styles.wifiOfflineCard}>
+              <Text style={styles.wifiOfflineTitle}>Wi-Fi is not connected</Text>
+              <Text style={styles.wifiOfflineHint}>Connect this TV to Wi-Fi to open CMS from your phone or computer.</Text>
+              <Pressable
+                focusable
+                hasTVPreferredFocus
+                onPress={openWifiSettings}
+                style={({ pressed, focused }: any) => [
+                  styles.wifiSettingsButton,
+                  focused && styles.btnFocused,
+                  pressed && styles.btnPressed,
+                ]}
+              >
+                <Text style={styles.wifiSettingsButtonText}>OPEN WI-FI SETTINGS</Text>
+              </Pressable>
+            </View>
+          )}
 
           <Pressable
             focusable
-            hasTVPreferredFocus
+            hasTVPreferredFocus={networkConnected !== false}
             onPress={scanFolder}
             style={({ pressed, focused }: any) => [
               styles.btn,
@@ -2229,6 +2236,23 @@ export default function App() {
               focusable={true}
               contentContainerStyle={styles.configPageContent}
             >
+              <View style={styles.cmsConnectionCard}>
+                <View style={styles.cmsQrPanel}>
+                  {cmsInfo.qrCode ? (
+                    <Image source={{ uri: cmsInfo.qrCode }} style={styles.cmsQrCode} />
+                  ) : (
+                    <View style={styles.cmsQrLoading}><ActivityIndicator color="#38bdf8" /></View>
+                  )}
+                </View>
+                <View style={styles.cmsConnectionDetails}>
+                  <Text style={styles.cmsConnectionTitle}>CMS CONNECTION</Text>
+                  <Text style={styles.cmsConnectionHint}>Scan this QR code from a phone or computer connected to the same Wi-Fi.</Text>
+                  <Text style={styles.cmsConnectionLabel}>TV IP &amp; PORT</Text>
+                  <Text selectable style={styles.cmsConnectionUrl}>{cmsInfo.url || 'http://Detecting-TV-IP:9090'}</Text>
+                  <Text style={styles.cmsConnectionPort}>CMS web server: port 9090</Text>
+                </View>
+              </View>
+
               {/* Slide Duration */}
               <View style={styles.settingSectionSingle}>
                 <Text style={styles.sectionTitle}>Image Slide Duration:</Text>
@@ -2865,6 +2889,43 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 8,
   },
+  wifiOfflineCard: {
+    width: '100%',
+    marginBottom: 4,
+    padding: 14,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+  },
+  wifiOfflineTitle: {
+    color: '#fbbf24',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  wifiOfflineHint: {
+    color: '#e2e8f0',
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  wifiSettingsButton: {
+    minWidth: 220,
+    marginTop: 12,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#0284c7',
+    alignItems: 'center',
+  },
+  wifiSettingsButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   emptyStepsTitle: {
     color: '#38bdf8',
     fontWeight: '800',
@@ -3296,6 +3357,72 @@ const styles = StyleSheet.create({
   configPageContent: {
     paddingHorizontal: 32,
     paddingBottom: 40,
+  },
+  cmsConnectionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 18,
+    marginBottom: 28,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#0ea5e9',
+    backgroundColor: '#0f1d2e',
+  },
+  cmsQrPanel: {
+    width: 142,
+    height: 142,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: '#ffffff',
+  },
+  cmsQrCode: {
+    width: 126,
+    height: 126,
+    resizeMode: 'contain',
+  },
+  cmsQrLoading: {
+    width: 126,
+    height: 126,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cmsConnectionDetails: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cmsConnectionTitle: {
+    color: '#38bdf8',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  cmsConnectionHint: {
+    color: '#cbd5e1',
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 5,
+  },
+  cmsConnectionLabel: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginTop: 14,
+  },
+  cmsConnectionUrl: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 3,
+  },
+  cmsConnectionPort: {
+    color: '#4ade80',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 6,
   },
   settingSectionSingle: {
     marginBottom: 24,

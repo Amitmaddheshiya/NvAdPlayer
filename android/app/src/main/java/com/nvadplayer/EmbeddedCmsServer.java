@@ -1025,7 +1025,7 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("<head>\n");
         html.append("  <meta charset=\"UTF-8\">\n");
         html.append("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
-        html.append("  <title>NvAdPlayer Control Center & CMS</title>\n");
+        html.append("  <title>CMS Panel</title>\n");
         html.append("  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700&family=Oswald:wght@600&family=Poppins:wght@600&display=swap\" rel=\"stylesheet\">\n");
         html.append("  <style>\n");
         html.append("    :root {\n");
@@ -1205,7 +1205,7 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("<body>\n");
         html.append("  <div class=\"container\">\n");
         html.append("    <div class=\"header\">\n");
-        html.append("      <h1>📺 NvAd Control Center</h1>\n");
+        // html.append("      <h1>📺 NvAd Control Center</h1>\n");
         html.append("      <div class=\"header-right\">\n");
         html.append("        <button class=\"btn-action\" style=\"background:#dc2626; border:none; font-size:12px; padding:6px 12px; cursor:pointer;\" onclick=\"resetTvSettings()\">↺ Reset Settings</button>\n");
         html.append("        <button class=\"btn-action\" style=\"background:#ea580c; border:none; font-size:12px; padding:6px 12px; cursor:pointer;\" onclick=\"restartTvApp()\">🔄 Restart TV Player</button>\n");
@@ -1558,6 +1558,14 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("    let currentSection = 'section1';\n");
         html.append("    let canvasZones = [];\n");
         html.append("    let selectedZoneIndex = -1;\n");
+        html.append("    let activeDragZone = null;\n");
+        html.append("    let activeResizeZone = null;\n");
+        html.append("    let dragStartX = 0;\n");
+        html.append("    let dragStartY = 0;\n");
+        html.append("    let initialLeft = 0;\n");
+        html.append("    let initialTop = 0;\n");
+        html.append("    let initialWidth = 0;\n");
+        html.append("    let initialHeight = 0;\n");
         html.append("    let selectedEmergency = 'FIRE';\n");
         html.append("    let knownTvs = [];\n");
         html.append("    const selectedTvs = new Set();\n");
@@ -1849,7 +1857,6 @@ public class EmbeddedCmsServer extends NanoHTTPD {
         html.append("      fetchMedia();\n");
         html.append("      fetchLayout();\n");
         html.append("      initDragAndDrop();\n");
-        html.append("      initCanvasMouseEvents();\n");
         html.append("    };\n");
         html.append("    function initTheme() {\n");
         html.append("      const savedTheme = localStorage.getItem('cms_theme') || 'dark';\n");

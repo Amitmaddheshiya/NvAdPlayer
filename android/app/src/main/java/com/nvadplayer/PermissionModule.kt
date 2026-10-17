@@ -1,6 +1,9 @@
 package com.nvadplayer
 
 import android.content.Intent
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -14,6 +17,49 @@ import com.facebook.react.bridge.ReactMethod
 class PermissionModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
     override fun getName(): String = "PermissionModule"
+
+    @ReactMethod
+    fun isNetworkConnected(promise: Promise) {
+        try {
+            val connectivityManager = reactApplicationContext
+                .getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            val connected = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val network = connectivityManager?.activeNetwork
+                val capabilities = network?.let { connectivityManager.getNetworkCapabilities(it) }
+                capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+            } else {
+                @Suppress("DEPRECATION")
+                connectivityManager?.activeNetworkInfo?.isConnected == true
+            }
+            promise.resolve(connected)
+        } catch (e: Exception) {
+            Log.e("PermissionModule", "Error checking network status: ${e.message}")
+            promise.reject("NETWORK_STATUS_ERROR", e.message)
+        }
+    }
+
+    @ReactMethod
+    fun openWifiSettings(promise: Promise) {
+        val context = getCurrentActivity() ?: reactApplicationContext
+        try {
+            val intent = Intent(Settings.ACTION_WIFI_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            try {
+                val fallbackIntent = Intent(Settings.ACTION_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(fallbackIntent)
+                promise.resolve(true)
+            } catch (fallbackError: Exception) {
+                Log.e("PermissionModule", "Error opening Wi-Fi settings: ${fallbackError.message}")
+                promise.reject("WIFI_SETTINGS_ERROR", fallbackError.message)
+            }
+        }
+    }
 
     @ReactMethod
     fun checkStoragePermission(promise: Promise) {

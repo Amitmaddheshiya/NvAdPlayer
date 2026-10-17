@@ -52,7 +52,7 @@ async function getExpectedLicenseFromServer(deviceId: string): Promise<string | 
         const data = await res.json();
         const key = normalizeKey(String(data?.licenseKey || ""));
         if (key) return key;
-      } catch (_e) {
+      } catch {
       }
       if (attempt < LICENSE_VERIFY_RETRIES - 1) {
         await wait(1200 * (attempt + 1));
@@ -80,7 +80,7 @@ export async function saveLicense(deviceId: string, licenseKey: string) {
   ]);
 }
 
-export async function hasLocalActivationForDevice(deviceId: string) {
+export async function hasLocalActivationForDevice(_deviceId: string) {
   const stored = await readStoredLicense();
   // Only check if we have a valid license key stored (4+ characters)
   // Ignore deviceId match since license is tied to device on server side
